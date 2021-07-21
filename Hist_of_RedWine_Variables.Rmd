@@ -1,0 +1,27 @@
+---
+title: "Histograms of Variables From Red Wine"
+author: "Vito Frank Leonardo"
+date: "7/21/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+
+```{r}
+library(tidyverse)
+RedWine <- read_delim("winequality-red.csv", delim = ";")
+
+
+for(i in 1:dim(RedWine)[2]){
+
+    hist(x=RedWine[[i]], 
+         main = paste0("Histogram of ",names(RedWine)[i]," from Red Wine data"), 
+         xlab = names(RedWine)[i])
+
+}
+
+```
+
