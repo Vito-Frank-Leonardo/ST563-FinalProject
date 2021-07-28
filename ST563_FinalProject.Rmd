@@ -1,0 +1,64 @@
+---
+title: "ST563 Final Project"
+author: "Vito Leonardo, Jiatao Wang, and Wenjin Liu"
+date: "7/28/2021"
+output:   
+  word_document:
+    toc: yes
+    reference_docx: word-styles-reference-01.docx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(caret)
+library(MASS)
+library(glmnet)
+```
+
+# Introduction
+
+# The Data
+```{r}
+RedWine <- read_delim("winequality-red.csv", delim = ";")
+RedWine$QualityCat <- factor(ifelse(RedWine$quality >= 6, 1, 0), labels = c("high","low"))
+corrplot::corrplot(cor(RedWine[,-13]))
+
+Train <- sample(1:nrow(RedWine), .8*nrow(RedWine))
+RedWine.Train <- RedWine[Train,]
+RedWine.Test <- RedWine[-Train,]
+
+```
+
+# Regression Models
+
+## Linear Regression
+
+```{r}
+X.train <- as.matrix(RedWine.Train[,-c(12,13)])
+X.test <- as.matrix(RedWine.Test[,-c(12,13)])
+Y <- RedWine.Train$quality
+cv.out <- cv.glmnet(X.train, Y, alpha=1)
+plot(cv.out)
+bestlam <- cv.out$lambda.min
+lasso.fit <- glmnet(X.train,Y, alpha = 1, lambda = bestlam)
+lasso.coef <- predict(lasso.fit, type = "coefficients")
+lasso.pred <- predict(lasso.fit, newx= X.test)
+lasso.MSE <- mean((lasso.pred - RedWine.Test$quality)^2)
+```
+
+# Classification Models
+
+## Logistic Regression
+```{r}
+glm.fit <- glm(QualityCat ~ . - quality, data = RedWine.Train, family = binomial)
+glm.fit2 <- stepAIC(glm.fit, direction = "both", trace = FALSE)
+glm.prob <- predict(glm.fit2, newdata = RedWine.Test[,-c(12,13)], type = "response")
+glm.pred <- factor(ifelse(glm.prob >.5, 1,0), labels = c("high", "low"))
+
+(ErrorMatrix <- confusionMatrix(data =  glm.pred, reference = RedWine.Test$QualityCat))
+glm.missclass <- 1 - ErrorMatrix$overall[1]
+```
+
+
+# Results
